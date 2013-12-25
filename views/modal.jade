@@ -1,0 +1,12 @@
+div(id="myModal", class="modal fade", tabindex="-1", role="dialog", aria-labelledby="myModalLabel", aria-hidden="true")
+    div.modal-dialog
+        div.modal-content
+            div.modal-header
+                button(type="button", class="close", data-dismiss="modal", aria-hidden="true") x
+                h3(id="myModalLabel") Warning
+            div.modal-body
+                p Are you sure to delete
+                    b(id="thiswork")
+            div.modal-footer
+                button.btn.btn-default(data-dismiss="modal", aria-hidden="true") Cancel
+                button.btn.btn-primary(id="a") Delete

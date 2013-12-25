@@ -1,0 +1,18 @@
+div(class="navbar navbar-default")
+    div(class="navbar-inner")
+        div(class="container")
+            a(class="navbar-brand", href="#") TO DO LIST
+            div(class="nav-collapse")
+                form(class="navbar-form navbar-left",action='/search',method='get')
+                    div(class="form-group")
+                        input(type="text", class="form-control", placeholder="Search",name='title')
+                    button(type="submit", class="btn btn-default") Submit
+                ul(class="nav navbar-nav navbar-right")
+                    li(class="dropdown")
+                        a(href="#", class="dropdown-toggle glyphicon glyphicon-cog", data-toggle="dropdown") Admin
+                            b(class="caret")
+                        ul(class="dropdown-menu")
+                            li: a(href="#") English
+                            li: a(href="#") Vietnamese
+                            li(class="divider")
+                            li: a(href="#") Logout

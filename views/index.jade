@@ -1,0 +1,235 @@
+extends layout
+
+block content
+    include modal
+    include header
+    div(class="container")
+            div(class="btn-group action")
+                a(href='/all/1',type="button", class="btn btn-default", data-id='all')
+                    span(class="glyphicon glyphicon-list")
+                    | All
+                    span.badge
+                a(href='/active/1',type="button", class="btn btn-default", data-id='active')
+                    span(class="glyphicon glyphicon-flash")
+                    | Active
+                    span.badge
+                a(href='/completed/1',type="button", class="btn btn-default",data-id='completed')
+                    span(class="glyphicon glyphicon-check")
+                    | Completed
+                    span.badge
+
+            div.row
+                table(class="table", id="table")
+                    thead
+                        tr
+                            th #
+                            th Task
+                            th Due date
+                            th Action
+                        tr
+                            td
+                            td
+                                input(type="text", class="form-control", placeholder="Add a new task ...", id="newTask")
+                            td
+                                div(id="datetimepicker1", class="input-append date")
+                                    input(data-format="dd-MM-yyyy", type="text",class='form-control', id="newDate1",style='width:80%;display:inline;margin-bottom:7px')
+                                    span(class="add-on")
+                                        i.glyphicon.glyphicon-calendar(data-date-icon="icon-calendar")
+                            td
+                                button(class="btn btn-primary", id="addButton") Add
+
+                        tr(id="newRowTemplate" class="hide")
+                            td
+                                input(type="checkbox", class="app-done checkbox", data-id="#id#")
+                            td: a(class="taskTitle task", style="text-decoration : none;") #title#
+                            td
+                                a(class="taskTitle date", style="text-decoration : none;") #date#
+                            td(class="ed")
+                                button(class="btn btnEdit edit", id="btnEdit") Edit
+                                button(class="btn btn-warning btnDelete edit", data-id="#id#", id="btnDelete") Delete
+
+                        tr(style='display:none', id="editRowTemplate")
+                            td
+                                input(type="checkbox", class="app-done checkbox", disabled='disabled')
+                            td
+                                input(id="editor" type="text", class="form-control input-xlarge")
+                            td
+                                div(id="datetimepicker2", class="input-append date")
+                                    input(data-format="dd-MM-yyyy", type="text",class='form-control', id="newDate2",style="width:80%;display:inline;margin-bottom:7px")
+                                    span(class="add-on")
+                                        i.glyphicon.glyphicon-calendar(data-date-icon="icon-calendar")
+                            td
+                                button(class="btn btn-warning  btnSave save", data-id="#id#", id="btnSave") Save
+                                button(class="btn  btnCancel save", data-id="#id#", id="btnCancel") Cancel
+                        tbody(id="taskRows")
+                            each task in listTask
+                                tr
+                                    if(task.done == 0)
+                                        td: input(type="checkbox", class="app-done checkbox", data-id="#{task.id}")
+                                        td: a(class="taskTitle task", style="text-decoration : none;") #{task.content}
+                                        td: a(class="taskTitle date", style="text-decoration : none;") #{task.date}
+                                    else
+                                        td: input(type="checkbox", class="app-done checkbox", data-id="#{task.id}",checked='checked')
+                                        td: a(class="taskTitle task", style="text-decoration : line-through;") #{task.content}
+                                        td: a(class="taskTitle date", style="text-decoration : line-through;") #{task.date}
+                                    td(class="ed")
+                                        button(class="btn btnEdit edit", id="btnEdit") Edit
+                                        button(class="btn btn-warning btnDelete edit", data-id="#{task.id}", id="btnDelete") Delete
+        div.container.text-center
+            ul.pagination
+                   - if(count%3 == 0)
+                           - for (var i = 1; i <= count/3; i++)
+                               li
+                                   a(href='#', data-id =i)=i
+                     else
+                           - for (var i = 1; i <= count/3+1; i++)
+                                li
+                                    a(href='#', data-id =i)=i
+
+
+    script.
+        $(function() {
+          $('#datetimepicker1').datetimepicker({
+            language: 'pt-BR'
+          });
+           $('#datetimepicker2').datetimepicker({
+            language: 'pt-BR'
+          });
+        });
+    script.
+        $(document).ready(function(){
+            page = $('.pagination li').length;
+            array = window.location.pathname.split('/');
+            url = array[0] + '/' + array[1];
+            for(var i = 1; i <= page; i++){
+                $('.pagination').find('[data-id=' +i+ ']').attr('href',url+'/'+i);
+            }
+            $('#taskRows').on('click', '.app-done', function() {
+                $self = $(this);
+                var id   = $(this).attr('data-id');
+                var $tr = $(this).parents('tr').find('td');
+                var done = 0;
+                if($(this).prop('checked')) done =1;
+                $(this).attr('disabled', 'disabled');
+                $.ajax({
+                type: 'POST',
+                url: '/done/' + id + '/'+ done,
+                data: {
+                     id  : id,
+                     done:done
+                }
+                }).done(function(response) {
+                    $self.removeAttr('disabled');
+                    if ('OK' == response) {
+                        if ($self.prop('checked')) {
+                            $tr.eq(1).find('a').css('text-decoration', 'line-through');
+                            $tr.eq(2).find('a').css('text-decoration', 'line-through');
+                        } else {
+                          $tr.eq(1).find('a').css('text-decoration', 'none');
+                          $tr.eq(2).find('a').css('text-decoration', 'none');
+                        }
+                    }
+                });
+            });
+
+            $('#table').on('click','#addButton',function() {
+                var add = $('#newTask').val();
+                var date = $('#newDate1').val();
+                $.ajax({
+                    type:'POST',
+                    url:'/add',
+                    data:{
+                        content: add,
+                        date   : date
+                    }
+                }).done(function(response){
+                            var template = $('#newRowTemplate').html().replace(/#id#/g, response)
+                                                                      .replace(/#title#/g, add)
+                                                                      .replace(/#date#/g, date);
+                            $('<tr/>').html(template).appendTo('#taskRows');
+                            $('h4').fadeIn(1000).fadeOut(5000);
+                });
+            });
+
+            $('#taskRows').on('click','#btnDelete',function() {
+                $('#myModal').modal('show');
+                    var id   = $(this).data('id');
+                    var self = $(this);
+                    var thiswork= $(this).parents('tr').find('.task').html();
+                    $('#thiswork').html(thiswork);
+                    $('#a').click(function() {
+                        $.ajax({
+                        type: 'POST',
+                        url: '/delete',
+                        data: {
+                            id: id
+                        }
+                        }).done(function(response){
+                            if ('OK' == response) {
+                                $('#myModal').modal('hide');
+                                $(self).closest('tr').remove();
+                             }
+                        });
+                    });
+                });
+
+            $('#taskRows').on('click', '#btnEdit', function() {
+                    $self = $(this);
+                    var $editor = $('#editor');
+                    var task = $(this).parents('tr').find('.task');
+                    var title = task.html();
+                    var $datetimepicker2 = $('#datetimepicker2');
+                    var date = $self.parents('tr').find('.date');
+                    var datetime = date.html(),
+                        tr    = $self.parents('tr');
+                    $('#taskRows').find('tr').show();
+                    $self.parents('tr').hide();
+                    $('#editRowTemplate').find('#datetimepicker2')
+                                    .data('currentDateId', date.attr('data-id'))
+                                    .find('#newDate2').val(datetime)
+                                    .end().end()
+                                    .find('#editor')
+                                    .val(title)
+                                    .end()
+                                    .show()
+                                     .insertAfter($(tr));
+                });
+
+            $('#taskRows').on('click', '#btnCancel', function() {
+                    $('#editRowTemplate').hide()
+                                         .prev('tr:first').show();
+                    $('#editRowTemplate').insertAfter('#newRowTemplate');
+            });
+
+            $('#taskRows').on('click', '#btnSave', function() {
+                            var $self = $(this);
+                            var id = $self.parents('#editRowTemplate').prev('tr:first').find('.checkbox').attr('data-id');
+                            var title = $self.parents('tr').find('#editor').val();
+                            var date = $self.parents('tr').find('#newDate2').val();
+                            if (title == '') {
+                                return;
+                            }
+                            $.ajax({
+                                type: 'POST',
+                                url: '/update',
+                                data: {
+                                    id: id,
+                                    title: title,
+                                    date: date
+                                }
+                            }).done(function(response) {
+                                if (response == 'OK') {
+                                    $self.parents('#editRowTemplate').hide()
+                                                         .prev('tr:first')
+                                                         .find('.task').html(title)
+                                                         .end()
+                                                         .find('.date').html(date)
+                                                         .end()
+                                                         .show();
+                                }
+                                $('#editRowTemplate').insertAfter('#newRowTemplate');
+                            });
+                        });
+            $('.action').find('[data-id='+window.location.pathname.split('/')[1]+']').addClass('active');
+
+        });
